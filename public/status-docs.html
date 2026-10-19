@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ RAG status API docs</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui.css">
+<style>
+  body { margin: 0; }
+  .topbar-note { padding: .6rem 1.25rem; font: 14px/1.4 system-ui, sans-serif; background: #172033; color: #eaf0f7; }
+  .topbar-note a { color: #5fd0c5; }
+  #offline { display: none; padding: 1.5rem; font: 16px/1.5 system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div class="topbar-note">Interactive docs for the status API. Use <b>Try it out</b> on <code>/health</code>. <a href="/openapi.json">openapi.json</a></div>
+<div id="swagger-ui"></div>
+<div id="offline">
+  Swagger UI could not be loaded from the CDN (this page needs internet access in your browser).
+  The API description is still available at <a href="/openapi.json">/openapi.json</a>; paste it into any OpenAPI tool, or import that URL into Postman.
+</div>
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+<script>
+  if (window.SwaggerUIBundle) {
+    window.ui = SwaggerUIBundle({ url: '/openapi.json', dom_id: '#swagger-ui', deepLinking: true, tryItOutEnabled: true, docExpansion: 'full' });
+  } else {
+    document.getElementById('offline').style.display = 'block';
+  }
+</script>
+</body>
+</html>

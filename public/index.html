@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the FAQs</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #eef2f4;
+    --surface: #ffffff;
+    --ink: #14212b;
+    --muted: #54646f;
+    --line: #d3dce1;
+    --accent: #0f5c6e;
+    --accent-ink: #ffffff;
+    --mark: #ffe8a3;
+    --mark-ink: #4a3b00;
+    --err: #b42318;
+    --err-bg: #fdecea;
+    --dot-l: 40%;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f171d;
+      --surface: #17222b;
+      --ink: #e6edf1;
+      --muted: #96a6b1;
+      --line: #2a3944;
+      --accent: #5cc2d6;
+      --accent-ink: #06222a;
+      --mark: #5a4810;
+      --mark-ink: #ffe9a8;
+      --err: #ff9a90;
+      --err-bg: #3a1a18;
+      --dot-l: 68%;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 44rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  h1 { margin: 0 0 .25rem; font-size: 1.9rem; letter-spacing: -.01em; }
+  .lede { margin: 0 0 1rem; color: var(--muted); max-width: 34rem; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+  .secondary {
+    background: transparent; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 8px; padding: .4rem .9rem; font-weight: 600;
+  }
+  .secondary:disabled { opacity: .6; cursor: progress; }
+  .status { min-height: 1.4rem; margin: 0 0 .75rem; font-size: .9rem; color: var(--muted); }
+  .status.err { color: var(--err); }
+
+  form {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: .9rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 5.5rem;
+    resize: vertical;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: .25rem;
+  }
+  form:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: .75rem; margin-top: .5rem; }
+  .controls label { color: var(--muted); font-size: .9rem; display: flex; align-items: center; gap: .5rem; }
+  input[type=number] {
+    width: 4rem; font: inherit; color: inherit; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: .3rem .4rem;
+  }
+  button { font: inherit; cursor: pointer; }
+  .primary {
+    background: var(--accent); color: var(--accent-ink);
+    border: 0; border-radius: 8px; padding: .55rem 1.4rem; font-weight: 600;
+  }
+  .primary:disabled { opacity: .6; cursor: progress; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  #examples { margin: 1.5rem 0 0; }
+  #examples p { margin: 0 0 .5rem; color: var(--muted); font-size: .9rem; }
+  #examples ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; }
+  #popular { margin-top: 1.1rem; }
+  .count { margin-left: .55rem; font-size: .85rem; color: var(--muted); }
+  .example {
+    background: none; border: 0; padding: .1rem 0; color: var(--accent);
+    text-align: left; text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  #banner { display: none; margin: 0 0 1rem; padding: .6rem .8rem; border-radius: 8px; background: var(--err-bg); color: var(--err); }
+
+  #feed { margin-top: 1.75rem; display: flex; flex-direction: column; gap: 1.25rem; }
+  .entry { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.2rem; }
+  .entry .q { margin: 0 0 .6rem; font-weight: 650; }
+  .entry .a { margin: 0; font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif; font-size: 1.08rem; line-height: 1.6; white-space: pre-wrap; max-width: 38rem; }
+  .entry.pending .a { color: var(--muted); font-style: italic; }
+  .entry.error { border-color: var(--err); }
+  .entry.error .a { font-family: inherit; font-size: 1rem; color: var(--err); }
+
+  .sources { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: 1rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+  .sources span.label { color: var(--muted); font-size: .88rem; }
+  .chip {
+    background: var(--mark); color: var(--mark-ink);
+    font: 600 .85rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    padding: .2rem .6rem; border-radius: 3px 3px 3px 0;
+    border-bottom: 2px solid color-mix(in srgb, var(--mark-ink) 45%, transparent);
+  }
+
+  details.manage { margin-top: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 0 1rem; }
+  details.manage summary { cursor: pointer; padding: .8rem 0; font-weight: 600; }
+  details.manage[open] summary { border-bottom: 1px solid var(--line); margin-bottom: .9rem; }
+  details.manage > :last-child { margin-bottom: 1rem; }
+  .hint { margin: 0 0 .75rem; color: var(--muted); font-size: .9rem; }
+  .drop {
+    position: relative; display: block; text-align: center; cursor: pointer;
+    border: 2px dashed var(--line); border-radius: 8px; padding: 1.3rem 1rem; color: var(--muted);
+  }
+  .drop:hover, .drop.over, .drop:focus-within { border-color: var(--accent); color: var(--ink); }
+  .drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .picked { list-style: none; margin: .75rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+  .picked li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; font: .88rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .picked .size { color: var(--muted); margin-left: auto; }
+  .picked .remove { background: none; border: 0; color: var(--muted); font-size: 1.15rem; line-height: 1; padding: .1rem .45rem; border-radius: 4px; }
+  .picked .remove:hover { color: var(--err); }
+  .actions { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; margin-top: .9rem; }
+  .msg { font-size: .9rem; color: var(--muted); }
+  .msg.err { color: var(--err); }
+  .files { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .file { border: 1px solid var(--line); border-radius: 3px; padding: .15rem .55rem; font: .82rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  /* vector map */
+  .plot { position: relative; margin-top: .25rem; }
+  .plot svg { display: block; width: 100%; height: auto; }
+  .plot-bg { fill: var(--bg); stroke: var(--line); }
+  .dot { stroke: var(--surface); stroke-width: 1.5; cursor: pointer; transition: opacity .12s; }
+  .dot.used { stroke: var(--ink); stroke-width: 2.5; }
+  .pull { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: .85; }
+  .qmark { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+  .qmark.hollow { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 3 2; }
+  .part-head { margin: 1rem 0 .1rem; font-size: .9rem; font-weight: 650; }
+  .part-head span { font-weight: 400; color: var(--muted); }
+  .qlabel { fill: var(--ink); font: 600 12px system-ui, sans-serif; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .tip { position: absolute; z-index: 5; display: none; pointer-events: none; max-width: 17rem; padding: .5rem .7rem; font-size: .82rem; line-height: 1.4;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
+  .tip b { display: block; font: 600 .8rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-bottom: .2rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: .35rem; margin: .7rem 0 0; }
+  .legend button { display: inline-flex; align-items: center; gap: .4rem; background: none; color: inherit; border: 1px solid var(--line); border-radius: 999px; padding: .15rem .65rem .15rem .45rem; font: .8rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .legend button[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .legend i { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
+  #inspect-form { display: flex; gap: .6rem; flex-wrap: wrap; margin: 0 0 .75rem; padding: 0; background: none; border: 0; border-radius: 0; }
+  #inspect-form:focus-within { box-shadow: none; border-color: transparent; }
+  #inspect-q { flex: 1 1 16rem; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .45rem .65rem; }
+  .res { display: grid; grid-template-columns: 2.4rem 6.2rem 1fr; gap: .15rem .8rem; padding: .6rem 0 .6rem .6rem; border-top: 1px solid var(--line); border-left: 3px solid transparent; font-size: .88rem; }
+  .res.used { border-left-color: var(--accent); }
+  .res .rk { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .res .sc { font: .82rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .res .bar { height: 5px; border-radius: 3px; background: var(--line); margin-top: .25rem; overflow: hidden; }
+  .res .bar i { display: block; height: 100%; background: var(--accent); }
+  .res .fn { font: 600 .8rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .res .tag { margin-left: .5rem; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+  .res p { margin: .15rem 0 0; color: var(--muted); }
+  .cachetag { font-size: .8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .05rem .6rem; }
+  .linkbtn { margin-left: auto; background: none; border: 0; padding: 0; color: var(--accent); font-size: .88rem; text-decoration: underline; text-underline-offset: 3px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .entry { animation: settle .18s ease-out; }
+    @keyframes settle { from { opacity: 0; transform: translateY(4px); } }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div>
+      <h1>Ask the FAQs</h1>
+      <p class="lede">Ask a question in plain language. Answers come only from the FAQ documents, and each one lists the files it draws on. <a href="/docs">API docs</a></p>
+    </div>
+    <button id="reload" type="button" class="secondary" title="Re-read the FAQ files after you add, edit or delete them">Reload FAQs</button>
+  </header>
+  <p id="reload-status" class="status" role="status"></p>
+
+  <div id="banner" role="alert"></div>
+
+  <form id="form">
+    <label for="q" class="sr" style="position:absolute;left:-9999px">Your question</label>
+    <textarea id="q" maxlength="1000" placeholder="For example: How do I enable two-factor authentication?" required autofocus></textarea>
+    <div class="controls">
+      <label for="k">Excerpts to search
+        <input id="k" type="number" min="1" max="10" step="1" value="4" required>
+      </label>
+      <button id="ask" class="primary" type="submit">Ask question</button>
+    </div>
+  </form>
+
+
+  <details class="manage" id="manage">
+    <summary>Add or update FAQ files</summary>
+    <p class="hint">Attach Markdown (.md) files, up to 20 at a time and 200 KB each. A file with the same name as an existing one replaces it. Files are indexed straight away.</p>
+    <label class="drop" id="drop">
+      <input id="files" type="file" accept=".md,text/markdown" multiple>
+      <span>Choose .md files, or drop them here</span>
+    </label>
+    <ul id="picked" class="picked"></ul>
+    <div class="actions">
+      <button id="upload" type="button" class="primary" disabled>Upload and index</button>
+      <span id="upload-status" class="msg" role="status"></span>
+    </div>
+    <p class="hint" style="margin: 1.1rem 0 .5rem">FAQ files on the server</p>
+    <div id="faq-list" class="files"></div>
+  </details>
+
+
+  <details class="manage" id="vmap">
+    <summary>Vector map</summary>
+    <p class="hint">Each dot is one chunk of an FAQ file, placed so that chunks with similar meaning sit close together. Ask a question below to see where it lands and which chunks retrieval picks. A question with several parts is split up, and each part is shown separately.</p>
+    <form id="inspect-form">
+      <input id="inspect-q" type="text" maxlength="1000" placeholder="Inspect a question, e.g. How do I enable 2FA?" aria-label="Question to inspect">
+      <button id="inspect-btn" class="primary" type="submit">Inspect</button>
+    </form>
+    <p id="inspect-msg" class="msg" role="status"></p>
+    <div class="plot" id="plot">
+      <svg id="vmap-svg" viewBox="0 0 640 400" role="img" aria-label="Scatter plot of FAQ chunks in two dimensions. The ranked list below gives the same information as text."></svg>
+      <div id="vmap-tip" class="tip"></div>
+    </div>
+    <div id="vmap-legend" class="legend"></div>
+    <p id="vmap-note" class="hint" style="margin-top: .7rem"></p>
+    <div id="inspect-results"></div>
+  </details>
+
+  <section id="examples">
+    <div id="starters">
+      <p>Not sure where to start? Try one of these.</p>
+      <ul>
+        <li><button type="button" class="example">How do I reset my password?</button></li>
+        <li><button type="button" class="example">Can users still log in with a password after SSO is enforced?</button></li>
+        <li><button type="button" class="example">How many PTO days can I carry over?</button></li>
+      </ul>
+    </div>
+    <div id="popular" style="display: none">
+      <p>Most asked</p>
+      <ul id="popular-list"></ul>
+    </div>
+  </section>
+
+  <section id="feed" aria-live="polite" aria-label="Answers"></section>
+</main>
+
+<script>
+(() => {
+  const form = document.getElementById('form');
+  const q = document.getElementById('q');
+  const k = document.getElementById('k');
+  const btn = document.getElementById('ask');
+  const feed = document.getElementById('feed');
+  const examples = document.getElementById('examples');
+  const starters = document.getElementById('starters');
+  const popularBox = document.getElementById('popular');
+  const popularList = document.getElementById('popular-list');
+  const banner = document.getElementById('banner');
+  const reloadBtn = document.getElementById('reload');
+  const reloadStatus = document.getElementById('reload-status');
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text; // textContent only: never inject HTML from the model
+    return n;
+  };
+
+  function showBanner(msg) { banner.textContent = msg; banner.style.display = 'block'; }
+
+  async function ask(question, topK) {
+    const res = await fetch('/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, top_k: topK }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* non-JSON body */ }
+    if (!res.ok) {
+      const fallback = res.status === 400 ? 'The server rejected the question.' : 'Something went wrong on the server. Try again in a moment.';
+      throw new Error(data.error || fallback);
+    }
+    return { ...data, cached: res.headers.get('X-Cache') === 'HIT' }; // the body is only {answer, sources}; the cache status is a header
+  }
+
+  function fill(entry, answer, sources, question, topK, cached) {
+    entry.classList.remove('pending');
+    entry.querySelector('.a').textContent = answer;
+    if (sources && sources.length) {
+      const box = el('div', 'sources');
+      box.append(el('span', 'label', sources.length > 1 ? 'Based on these files' : 'Based on this file'));
+      sources.forEach((s) => box.append(el('span', 'chip', s)));
+      if (cached) {
+        const tag = el('span', 'cachetag', 'from cache');
+        tag.title = 'This question was answered before, so the saved answer was reused (no model call).';
+        box.append(tag);
+      }
+      const link = el('button', 'linkbtn', 'Show on vector map');
+      link.type = 'button';
+      link.addEventListener('click', () => inspectQuestion(question, topK));
+      box.append(link);
+      entry.append(box);
+    }
+  }
+
+  async function submit(question, topK) {
+    starters.style.display = 'none'; // the starter examples go away; "Most asked" stays so you can watch it change
+    const entry = el('article', 'entry pending');
+    entry.append(el('p', 'q', question), el('p', 'a', 'Searching the FAQs\u2026'));
+    feed.prepend(entry);
+    btn.disabled = true;
+    btn.textContent = 'Searching\u2026';
+    try {
+      const { answer, sources, cached } = await ask(question, topK);
+      fill(entry, answer, sources, question, topK, cached);
+      loadPopular(); // the question you just asked may have changed the ranking
+    } catch (err) {
+      entry.classList.remove('pending');
+      entry.classList.add('error');
+      entry.querySelector('.a').textContent = err.message === 'Failed to fetch'
+        ? 'Could not reach the server. Check that it is running and try again.'
+        : err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ask question';
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const question = q.value.trim();
+    if (!question) { q.focus(); return; }
+    q.value = '';
+    submit(question, Number(k.value));
+    q.focus();
+  });
+
+  function setStatus(msg, isError) {
+    reloadStatus.textContent = msg;
+    reloadStatus.classList.toggle('err', !!isError);
+  }
+
+  reloadBtn.addEventListener('click', async () => {
+    reloadBtn.disabled = true;
+    reloadBtn.textContent = 'Reloading\u2026';
+    setStatus('Re-reading the FAQ files\u2026');
+    try {
+      const res = await fetch('/reload', { method: 'POST' });
+      let data = {};
+      try { data = await res.json(); } catch { /* non-JSON body */ }
+      if (!res.ok) {
+        throw new Error(res.status === 409 ? 'A reload is already running. Try again in a moment.' : data.error || 'Reload failed.');
+      }
+      setStatus(`FAQs reloaded: ${data.files} ${data.files === 1 ? 'file' : 'files'}, ${data.chunks} chunks.`);
+      loadFaqFiles();
+      refreshMap();
+    } catch (err) {
+      setStatus(err.message === 'Failed to fetch' ? 'Could not reach the server. Check that it is running and try again.' : err.message, true);
+    } finally {
+      reloadBtn.disabled = false;
+      reloadBtn.textContent = 'Reload FAQs';
+    }
+  });
+
+
+  // ---- FAQ file upload ----
+  const MAX_FILES = 20;
+  const MAX_BYTES = 200 * 1024;
+  const drop = document.getElementById('drop');
+  const picker = document.getElementById('files');
+  const pickedList = document.getElementById('picked');
+  const uploadBtn = document.getElementById('upload');
+  const uploadStatus = document.getElementById('upload-status');
+  const faqList = document.getElementById('faq-list');
+  const selected = new Map(); // file name -> File
+
+  function setMsg(node, msg, isError) { node.textContent = msg; node.classList.toggle('err', !!isError); }
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const kb = (bytes) => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`);
+
+  function renderPicked() {
+    pickedList.replaceChildren();
+    for (const f of selected.values()) {
+      const li = el('li');
+      const remove = el('button', 'remove', '\u00d7');
+      remove.type = 'button';
+      remove.setAttribute('aria-label', `Remove ${f.name}`);
+      remove.addEventListener('click', () => { selected.delete(f.name); renderPicked(); });
+      li.append(el('span', null, f.name), el('span', 'size', kb(f.size)), remove);
+      pickedList.append(li);
+    }
+    uploadBtn.disabled = selected.size === 0;
+  }
+
+  function addFiles(fileList) {
+    const skipped = [];
+    for (const f of fileList) {
+      if (!/\.md$/i.test(f.name)) skipped.push(`${f.name} (not a .md file)`);
+      else if (f.size === 0) skipped.push(`${f.name} (empty)`);
+      else if (f.size > MAX_BYTES) skipped.push(`${f.name} (over 200 KB)`);
+      else if (!selected.has(f.name) && selected.size >= MAX_FILES) skipped.push(`${f.name} (max ${MAX_FILES} files)`);
+      else selected.set(f.name, f);
+    }
+    renderPicked();
+    setMsg(uploadStatus, skipped.length ? `Skipped: ${skipped.join(', ')}` : '', skipped.length > 0);
+  }
+
+  async function loadFaqFiles() {
+    try {
+      const res = await fetch('/faqs');
+      if (!res.ok) return;
+      const { files } = await res.json();
+      faqList.replaceChildren(...files.map((name) => el('span', 'file', name)));
+      if (files.length === 0) faqList.textContent = 'None yet.';
+    } catch {
+      // the page asks for this list as soon as it loads, so a failed request here means the server is not reachable
+      showBanner('Cannot reach the server. Check that it is running, then reload this page.');
+    }
+  }
+
+  picker.addEventListener('change', () => { addFiles(picker.files); picker.value = ''; });
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+
+  uploadBtn.addEventListener('click', async () => {
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Indexing\u2026';
+    setMsg(uploadStatus, `Uploading ${plural(selected.size, 'file')} and rebuilding the index\u2026`);
+    try {
+      const files = await Promise.all([...selected.values()].map(async (f) => ({ name: f.name, content: await f.text() })));
+      const res = await fetch('/faqs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files }) });
+      let data = {};
+      try { data = await res.json(); } catch { /* non-JSON body */ }
+      if (!res.ok) throw new Error(res.status === 409 ? 'Another reload or upload is running. Try again in a moment.' : data.error || 'Upload failed.');
+      const replaced = data.saved.filter((s) => s.replaced).length;
+      selected.clear();
+      renderPicked();
+      setMsg(uploadStatus, `Indexed ${plural(data.saved.length, 'file')}${replaced ? ` (${replaced} replaced)` : ''}. The FAQs now have ${plural(data.files, 'file')} and ${plural(data.chunks, 'chunk')}.`);
+      loadFaqFiles();
+      refreshMap();
+    } catch (err) {
+      setMsg(uploadStatus, err.message === 'Failed to fetch' ? 'Could not reach the server. Check that it is running and try again.' : err.message, true);
+    } finally {
+      uploadBtn.textContent = 'Upload and index';
+      uploadBtn.disabled = selected.size === 0;
+    }
+  });
+
+  loadFaqFiles();
+
+  // ---- Vector map + retrieval inspector ----
+  const vmap = document.getElementById('vmap');
+  const vmapSvg = document.getElementById('vmap-svg');
+  const vmapTip = document.getElementById('vmap-tip');
+  const vmapLegend = document.getElementById('vmap-legend');
+  const vmapNote = document.getElementById('vmap-note');
+  const plot = document.getElementById('plot');
+  const inspectForm = document.getElementById('inspect-form');
+  const inspectQ = document.getElementById('inspect-q');
+  const inspectBtn = document.getElementById('inspect-btn');
+  const inspectMsg = document.getElementById('inspect-msg');
+  const inspectResults = document.getElementById('inspect-results');
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const VW = 640, VH = 400, VM = 28;
+  let mapData = null;       // GET /vectors
+  let inspection = null;    // POST /inspect
+  let focusFile = null;     // legend filter
+  let mapLoaded = false;
+
+  const svgEl = (tag, attrs) => {
+    const n = document.createElementNS(SVG_NS, tag);
+    for (const [name, value] of Object.entries(attrs || {})) n.setAttribute(name, value);
+    return n;
+  };
+  // one hue per file (golden-angle spacing keeps neighbours distinct); lightness comes from a theme variable
+  const colorFor = (file) => `hsl(${Math.round((mapData.files.indexOf(file) * 137.508) % 360)} 65% var(--dot-l))`;
+
+  function showTip(point, node) {
+    vmapTip.replaceChildren(el('b', null, point.file), el('span', null, point.text));
+    vmapTip.style.display = 'block';
+    const box = plot.getBoundingClientRect();
+    const dot = node.getBoundingClientRect();
+    const half = vmapTip.offsetWidth / 2;
+    const left = Math.min(Math.max(dot.left - box.left + dot.width / 2, half), Math.max(box.width - half, half));
+    vmapTip.style.left = `${left - half}px`;
+    const above = dot.top - box.top - vmapTip.offsetHeight - 8;
+    vmapTip.style.top = `${above >= 0 ? above : dot.bottom - box.top + 8}px`;
+  }
+  const hideTip = () => { vmapTip.style.display = 'none'; };
+
+  function renderLegend() {
+    vmapLegend.replaceChildren();
+    if (!mapData) return;
+    for (const file of mapData.files) {
+      const b = el('button');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(focusFile === file));
+      const swatch = el('i');
+      swatch.style.background = colorFor(file);
+      b.append(swatch, document.createTextNode(file));
+      b.addEventListener('click', () => { focusFile = focusFile === file ? null : file; renderLegend(); renderMap(); });
+      vmapLegend.append(b);
+    }
+  }
+
+  function drawMarker(x, y, label, hollow) {
+    vmapSvg.append(svgEl('polygon', { class: hollow ? 'qmark hollow' : 'qmark', points: `${x},${y - 10} ${x + 10},${y} ${x},${y + 10} ${x - 10},${y}` }));
+    const text = svgEl('text', { class: 'qlabel', x: x + 14, y: y + 4 });
+    text.textContent = label;
+    vmapSvg.append(text);
+  }
+
+  function renderMap() {
+    vmapSvg.replaceChildren();
+    hideTip();
+    if (!mapData || mapData.points.length === 0) { vmapNote.textContent = 'No chunks are indexed yet.'; return; }
+    const pts = mapData.points;
+    const byId = new Map(pts.map((p) => [p.id, p]));
+
+    // markers: a multi-part question shows the whole question (hollow) plus one marker per part
+    const markers = [];
+    if (inspection) {
+      const multi = inspection.mode === 'compound';
+      if (multi) markers.push({ x: inspection.question.x, y: inspection.question.y, label: 'Whole question', hollow: true });
+      inspection.parts.forEach((part, i) => markers.push({ x: part.x, y: part.y, label: multi ? `Part ${i + 1}` : 'Question', hollow: false }));
+    }
+
+    const xs = [...pts.map((p) => p.x), ...markers.map((m) => m.x)];
+    const ys = [...pts.map((p) => p.y), ...markers.map((m) => m.y)];
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const rx = maxX - minX || 1, ry = maxY - minY || 1;
+    const scale = Math.min((VW - 2 * VM) / rx, (VH - 2 * VM) / ry); // same scale on both axes so distances stay honest
+    const px = (x) => (VW - rx * scale) / 2 + (x - minX) * scale;
+    const py = (y) => VH - ((VH - ry * scale) / 2 + (y - minY) * scale);
+
+    vmapSvg.append(svgEl('rect', { class: 'plot-bg', x: 0.5, y: 0.5, width: VW - 1, height: VH - 1, rx: 8 }));
+
+    const usedIds = new Set();
+    if (inspection) {
+      inspection.parts.forEach((part) => {
+        for (const r of part.results) {
+          if (!r.used) continue;
+          usedIds.add(r.id);
+          // draw a line only where this part itself retrieved the chunk (or where it was added for a 2nd source)
+          const p = byId.get(r.id);
+          if (p && (r.rank <= inspection.per_part || r.added_for_diversity)) {
+            vmapSvg.append(svgEl('line', { class: 'pull', x1: px(part.x), y1: py(part.y), x2: px(p.x), y2: py(p.y) }));
+          }
+        }
+      });
+    }
+    // unused dots first, so retrieved ones are drawn on top
+    for (const p of [...pts].sort((a, b) => Number(usedIds.has(a.id)) - Number(usedIds.has(b.id)))) {
+      const used = usedIds.has(p.id);
+      const dot = svgEl('circle', { class: used ? 'dot used' : 'dot', cx: px(p.x), cy: py(p.y), r: used ? 7 : 5 });
+      dot.style.fill = colorFor(p.file);
+      dot.style.opacity = focusFile && p.file !== focusFile ? 0.12 : (inspection && !used ? 0.55 : 1);
+      dot.addEventListener('mouseenter', () => showTip(p, dot));
+      dot.addEventListener('mouseleave', hideTip);
+      vmapSvg.append(dot);
+    }
+    for (const m of markers) drawMarker(px(m.x), py(m.y), m.label, m.hollow);
+
+    const [r1, r2] = mapData.explained_variance;
+    vmapNote.textContent = `${plural(mapData.count, 'chunk')} from ${plural(mapData.files.length, 'file')}, ${mapData.dimensions} dimensions squeezed into 2. These two axes keep about ${Math.round((r1 + r2) * 100)}% of the variation, so distances on the map are approximate. The cosine scores below are exact.`;
+  }
+
+  function renderResults() {
+    inspectResults.replaceChildren();
+    if (!inspection) return;
+    const multi = inspection.mode === 'compound';
+    inspection.parts.forEach((part, i) => {
+      if (multi) {
+        const head = el('div', 'part-head', `Part ${i + 1}: `);
+        head.append(el('span', null, part.question));
+        inspectResults.append(head);
+      }
+      for (const r of part.results) {
+        const row = el('div', r.used ? 'res used' : 'res');
+        const bar = el('div', 'bar');
+        const fill = el('i');
+        fill.style.width = `${Math.round(Math.min(Math.max(r.score, 0), 1) * 100)}%`;
+        bar.append(fill);
+        const score = el('div', null);
+        score.append(el('span', 'sc', r.score.toFixed(3)), bar);
+        const body = el('div');
+        const head = el('div');
+        head.append(el('span', 'fn', r.file));
+        if (r.used) head.append(el('span', 'tag', r.added_for_diversity ? 'Used (added for a 2nd source)' : 'Used as context'));
+        body.append(head, el('p', null, r.text));
+        row.append(el('span', 'rk', `#${r.rank}`), score, body);
+        inspectResults.append(row);
+      }
+    });
+  }
+
+  async function loadMap() {
+    try {
+      const res = await fetch('/vectors');
+      if (!res.ok) throw new Error();
+      mapData = await res.json();
+      mapLoaded = true;
+      focusFile = null;
+      renderLegend();
+      renderMap();
+    } catch {
+      setMsg(inspectMsg, 'Could not load the vector map. Check that the server is running.', true);
+    }
+  }
+
+  // after an upload or reload the chunk ids change, so drop any old inspection and fetch the new map
+  function refreshMap() {
+    inspection = null;
+    inspectResults.replaceChildren();
+    if (mapLoaded) loadMap();
+  }
+
+  async function inspectQuestion(question, topK) {
+    vmap.open = true;
+    inspectQ.value = question;
+    inspectBtn.disabled = true;
+    setMsg(inspectMsg, 'Embedding the question\u2026');
+    try {
+      if (!mapLoaded) await loadMap();
+      const res = await fetch('/inspect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, top_k: topK }) });
+      let data = {};
+      try { data = await res.json(); } catch { /* non-JSON body */ }
+      if (!res.ok) throw new Error(data.error || 'Inspection failed.');
+      inspection = data;
+      renderMap();
+      renderResults();
+      const usedCount = new Set(data.parts.flatMap((p) => p.results.filter((r) => r.used).map((r) => r.id))).size;
+      const split = data.mode === 'compound' ? `Split into ${data.parts.length} parts. ` : '';
+      setMsg(inspectMsg, `${split}Retrieval picked ${plural(usedCount, 'chunk')} from ${data.sources.join(', ')}.`);
+      vmap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      setMsg(inspectMsg, err.message === 'Failed to fetch' ? 'Could not reach the server. Check that it is running and try again.' : err.message, true);
+    } finally {
+      inspectBtn.disabled = false;
+    }
+  }
+
+  const currentTopK = () => (k.checkValidity() ? Number(k.value) : 4);
+  vmap.addEventListener('toggle', () => { if (vmap.open && !mapLoaded) loadMap(); });
+  inspectForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const question = inspectQ.value.trim();
+    if (!question) { inspectQ.focus(); return; }
+    inspectQuestion(question, currentTopK());
+  });
+
+  // ---- Most asked (hidden when there is nothing to show) ----
+  async function loadPopular() {
+    try {
+      const res = await fetch('/popular');
+      if (!res.ok) return;
+      const { questions } = await res.json();
+      popularList.replaceChildren(...questions.map((item) => {
+        const li = el('li');
+        const button = el('button', 'example', item.question);
+        button.type = 'button';
+        li.append(button, el('span', 'count', `asked ${plural(item.count, 'time')}`));
+        return li;
+      }));
+      popularBox.style.display = questions.length ? '' : 'none';
+    } catch { /* an unreachable server is already reported by the banner (see loadFaqFiles) */ }
+  }
+  loadPopular();
+
+  // Enter sends; Shift+Enter inserts a newline.
+  q.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  examples.addEventListener('click', (e) => {
+    if (e.target.classList.contains('example')) { q.value = e.target.textContent; form.requestSubmit(); }
+  });
+})();
+</script>
+</body>
+</html>
